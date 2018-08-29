@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">WeatherAndrii</string>
+
+    <string name="add_place">Add place</string>
+    <string name="title_activity_map">Map</string>
+</resources>
