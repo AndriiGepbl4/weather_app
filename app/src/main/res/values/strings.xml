@@ -3,4 +3,8 @@
 
     <string name="add_place">Add place</string>
     <string name="title_activity_map">Map</string>
+
+    <string name="location_permission_denied">Location permission denied</string>
+    <string name="permission_rationale_location">Permission rationale location</string>
+    <string name="permission_required_toast">Permission required</string>
 </resources>
