@@ -1,6 +1,8 @@
 package com.andrii_gerashchenko.weatherandrii;
 
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 
 import android.content.DialogInterface;
@@ -31,8 +33,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -71,7 +75,7 @@ public class Map extends AppCompatActivity
     private String[] mLikelyPlaceAttributions;
     private LatLng[] mLikelyPlaceLatLngs;
 
-    private ArrayList placesList;
+    private String place = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,7 +127,6 @@ public class Map extends AppCompatActivity
         mMap.getUiSettings().setCompassEnabled(true);
         mMap.setOnMapClickListener(this);
         ButterKnife.bind(this);
-        placesList = new ArrayList<String>();
     }
 
     /**
@@ -166,7 +169,6 @@ public class Map extends AppCompatActivity
                                     DEFAULT_ZOOM);
 
                             addMarker(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()),"My location");
-
                             addPlaceToList(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()));
 
                         } else {
@@ -185,8 +187,6 @@ public class Map extends AppCompatActivity
 
     private void moveCamera(LatLng latLng, float zoom) {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
-
-
     }
 
     private void addMarker(LatLng latLng, String title){
@@ -198,44 +198,79 @@ public class Map extends AppCompatActivity
     }
 
 
-    /**
-     * Prompts the user for permission to use the device location.
-     */
-    private void getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+    @Override
+    public void onMapClick(LatLng latLng) {
+//        moveCamera(latLng, DEFAULT_ZOOM);
+        mMap.clear();
+        addMarker(latLng, "Chosen location");
+        addPlaceToList(latLng);
+        String toastText = "Lat " + latLng.latitude + "\nlng " + latLng.longitude;
+
+        Toast toast = Toast.makeText(this, toastText, Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+    private void addPlaceToList(LatLng latLng){
+        Geocoder gcd = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses = null;
+
+        try {
+            addresses = gcd.getFromLocation(latLng.latitude, latLng.longitude, 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (addresses.size() > 0) {
+//            System.out.println(addresses.get(0).getLocality());
+            place = addresses.get(0).getLocality();
+        }
+//         place = "" + latLng.latitude + " " + latLng.longitude + "\n";
+    }
+
+    @OnClick(R.id.btnOk)
+    public void onOkClick() {
+        if (place == null){
+            Toast.makeText(this, "Location is " + place, Toast.LENGTH_SHORT).show();
+        }
+        else {
+            Intent intent = new Intent();
+            intent.putExtra("places", place);
+            setResult(RESULT_OK, intent);
+            finish();
         }
     }
 
-    /**
-     * Handles the result of the request for location permissions.
-     */
+    @OnClick(R.id.btnCancel)
+    public void onCancelClick() {
+        Toast.makeText(this, "place is empty ", Toast.LENGTH_SHORT).show();
+        mMap.clear();
+    }
+
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        mLocationPermissionGranted = false;
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mLocationPermissionGranted = true;
-                }
-            }
+    public void onBackPressed() {
+        onOkClick();
+        super.onBackPressed();
+    }
+
+    /**
+     * Updates the map's UI settings based on whether the user has granted location permission.
+     */
+    private void updateLocationUI() {
+        if (mMap == null) {
+            return;
         }
-        updateLocationUI();
+        try {
+            if (mLocationPermissionGranted) {
+                mMap.setMyLocationEnabled(true);
+                mMap.getUiSettings().setMyLocationButtonEnabled(true);
+            } else {
+                mMap.setMyLocationEnabled(false);
+                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                mLastKnownLocation = null;
+                getLocationPermission();
+            }
+        } catch (SecurityException e) {
+            Log.e("Exception: %s", e.getMessage());
+        }
     }
 
     /**
@@ -351,66 +386,42 @@ public class Map extends AppCompatActivity
     }
 
     /**
-     * Updates the map's UI settings based on whether the user has granted location permission.
+     * Prompts the user for permission to use the device location.
      */
-    private void updateLocationUI() {
-        if (mMap == null) {
-            return;
-        }
-        try {
-            if (mLocationPermissionGranted) {
-                mMap.setMyLocationEnabled(true);
-                mMap.getUiSettings().setMyLocationButtonEnabled(true);
-            } else {
-                mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                mLastKnownLocation = null;
-                getLocationPermission();
-            }
-        } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
+    private void getLocationPermission() {
+        /*
+         * Request location permission, so that we can get the location of the
+         * device. The result of the permission request is handled by a callback,
+         * onRequestPermissionsResult.
+         */
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            mLocationPermissionGranted = true;
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
     }
 
+    /**
+     * Handles the result of the request for location permissions.
+     */
     @Override
-    public void onMapClick(LatLng latLng) {
-//        moveCamera(latLng, DEFAULT_ZOOM);
-        addMarker(latLng, "Chosen location");
-
-        String toastText = "Lat " + latLng.latitude + "\nlng " + latLng.longitude;
-
-        Toast toast = Toast.makeText(this, toastText, Toast.LENGTH_SHORT);
-        toast.show();
-
-        addPlaceToList(latLng);
-    }
-
-    private void addPlaceToList(LatLng latLng){
-
-        String place = "" + latLng.latitude + " " + latLng.longitude + "\n";
-        placesList.add(place);
-    }
-
-    @OnClick(R.id.btnOk)
-    public void onOkClick() {
-        String toast = "";
-        for (int i = 0; i < placesList.size(); i++){
-            toast += placesList.get(i);
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        mLocationPermissionGranted = false;
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    mLocationPermissionGranted = true;
+                }
+            }
         }
-
-        Toast.makeText(this, "" + placesList.size(), Toast.LENGTH_SHORT).show();
-
-        Intent intent = new Intent();
-        intent.putCharSequenceArrayListExtra("places", placesList);
-        setResult(RESULT_OK);
-        finish();
-    }
-
-    @OnClick(R.id.btnCancel)
-    public void onCancelClick() {
-        placesList.clear();
-
-        Toast.makeText(this, "btn CANCEL pressed + placeList is empty " + placesList.isEmpty(), Toast.LENGTH_SHORT).show();
-        mMap.clear();
+        updateLocationUI();
     }
 }

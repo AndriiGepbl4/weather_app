@@ -1,21 +1,55 @@
 package com.andrii_gerashchenko.weatherandrii;
 
 import android.content.Intent;
+import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class Places extends AppCompatActivity {
+public class Places extends AppCompatActivity{
+
+    @BindView(R.id.lvLocations)
+    ListView lvLocations;
+
+    private ArrayList<String> locations = new ArrayList<>();
+    private final static String MYTAG = "MYTAG";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_places);
         ButterKnife.bind(this);
+
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(MYTAG, "onResume");
+        super.onResume();
+        if(locations != null){
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_item, locations);
+            lvLocations.setAdapter(adapter);
+
+            lvLocations.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                    Intent intent = new Intent(Places.this, Weather.class);
+                    intent.putExtra("location", locations.get(position));
+                    startActivity(intent);
+                }
+            });
+        }
     }
 
     @OnClick(R.id.btnAddPlace)
@@ -27,12 +61,32 @@ public class Places extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d(MYTAG, "onActivityResult");
 
-        if (data == null){
-            return;
+        String takenPlace = data.getStringExtra("places");
+        if (locations == null){
+            locations = new ArrayList<>();
         }
-        ArrayList places = data.getCharSequenceArrayListExtra("place");
+        locations.add(takenPlace);
+        Log.d(MYTAG, "places are " + takenPlace);
 
+    }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        Log.d(MYTAG, "onSaveInstanceState");
+
+        outState.putStringArrayList("loc", locations);
+        outState.putString("check", "test");
+
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.d(MYTAG, "onRestoreInstanceState");
+        super.onRestoreInstanceState(savedInstanceState);
+        locations = savedInstanceState.getStringArrayList("loc");
+        Toast.makeText(this, savedInstanceState.getString("check"), Toast.LENGTH_SHORT);
     }
 }
