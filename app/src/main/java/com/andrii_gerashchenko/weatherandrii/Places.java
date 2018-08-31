@@ -11,19 +11,25 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.andrii_gerashchenko.weatherandrii.DTO.ChosenLocation;
+import com.google.gson.Gson;
+
 import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class Places extends AppCompatActivity{
+public class Places extends AppCompatActivity {
 
     @BindView(R.id.lvLocations)
     ListView lvLocations;
 
-    private ArrayList<String> locations = new ArrayList<>();
+    private ArrayList<ChosenLocation> locations = new ArrayList<>();
+    private ArrayList<String> locationsString = new ArrayList<>();
+
     private final static String MYTAG = "MYTAG";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,15 +43,20 @@ public class Places extends AppCompatActivity{
     protected void onResume() {
         Log.d(MYTAG, "onResume");
         super.onResume();
-        if(locations != null){
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_item, locations);
+        if (locations != null) {
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_item, locationsString);
             lvLocations.setAdapter(adapter);
 
             lvLocations.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+//                    Intent intent = new Intent(Places.this, Weather.class);
+//                    intent.putExtra("location", locations.get(position).getAdminArea());
+//                    startActivity(intent);
+
                     Intent intent = new Intent(Places.this, Weather.class);
-                    intent.putExtra("location", locations.get(position));
+                    intent.putExtra("location", new Gson().toJson(locations.get(position)));
                     startActivity(intent);
                 }
             });
@@ -53,7 +64,7 @@ public class Places extends AppCompatActivity{
     }
 
     @OnClick(R.id.btnAddPlace)
-    public void onAddPlaceClick(){
+    public void onAddPlaceClick() {
         Intent intent = new Intent(this, Map.class);
         startActivityForResult(intent, 1);
     }
@@ -63,30 +74,31 @@ public class Places extends AppCompatActivity{
         super.onActivityResult(requestCode, resultCode, data);
         Log.d(MYTAG, "onActivityResult");
 
-        String takenPlace = data.getStringExtra("places");
-        if (locations == null){
-            locations = new ArrayList<>();
+        String jsonMyObject;
+        Bundle extras = data.getExtras();
+
+        if (extras != null) {
+            jsonMyObject = extras.getString("places");
+            ChosenLocation myLocation = new Gson().fromJson(jsonMyObject, ChosenLocation.class);
+
+            locations.add(myLocation);
+            locationsString.add(myLocation.getCountryName() + " " + myLocation.getAdminArea() + " " + myLocation.getLocality());
         }
-        locations.add(takenPlace);
-        Log.d(MYTAG, "places are " + takenPlace);
-
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        Log.d(MYTAG, "onSaveInstanceState");
-
-        outState.putStringArrayList("loc", locations);
-        outState.putString("check", "test");
-
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.d(MYTAG, "onRestoreInstanceState");
-        super.onRestoreInstanceState(savedInstanceState);
-        locations = savedInstanceState.getStringArrayList("loc");
-        Toast.makeText(this, savedInstanceState.getString("check"), Toast.LENGTH_SHORT);
-    }
+//    @Override
+//    public void onSaveInstanceState(Bundle outState) {
+//        Log.d(MYTAG, "onSaveInstanceState");
+//
+//        outState.putStringArrayList("loc", locations);
+//
+//        super.onSaveInstanceState(outState);
+//    }
+//
+//    @Override
+//    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+//        Log.d(MYTAG, "onRestoreInstanceState");
+//        super.onRestoreInstanceState(savedInstanceState);
+//        locations = savedInstanceState.getStringArrayList("loc");
+//    }
 }

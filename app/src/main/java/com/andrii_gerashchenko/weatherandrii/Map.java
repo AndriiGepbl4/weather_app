@@ -16,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.andrii_gerashchenko.weatherandrii.DTO.ChosenLocation;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.GeoDataClient;
@@ -32,6 +33,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,6 +77,7 @@ public class Map extends AppCompatActivity
     private String[] mLikelyPlaceAttributions;
     private LatLng[] mLikelyPlaceLatLngs;
 
+    private ChosenLocation myLocation;
     private String place = "";
 
     @Override
@@ -220,23 +223,20 @@ public class Map extends AppCompatActivity
             e.printStackTrace();
         }
         if (addresses.size() > 0) {
-//            System.out.println(addresses.get(0).getLocality());
-            place = addresses.get(0).getLocality();
+            String countryName = "" + addresses.get(0).getCountryName();
+            String adminArea = "" + addresses.get(0).getAdminArea();
+            String location = "" + addresses.get(0).getLocality();
+
+            myLocation = new ChosenLocation(countryName, adminArea, location, latLng.latitude, latLng.longitude);
         }
-//         place = "" + latLng.latitude + " " + latLng.longitude + "\n";
     }
 
     @OnClick(R.id.btnOk)
     public void onOkClick() {
-        if (place == null){
-            Toast.makeText(this, "Location is " + place, Toast.LENGTH_SHORT).show();
-        }
-        else {
             Intent intent = new Intent();
-            intent.putExtra("places", place);
+            intent.putExtra("places", new Gson().toJson(myLocation));
             setResult(RESULT_OK, intent);
             finish();
-        }
     }
 
     @OnClick(R.id.btnCancel)
