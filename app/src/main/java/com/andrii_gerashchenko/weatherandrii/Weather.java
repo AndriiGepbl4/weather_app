@@ -2,6 +2,8 @@ package com.andrii_gerashchenko.weatherandrii;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -9,8 +11,6 @@ import com.andrii_gerashchenko.weatherandrii.DTO.ChosenLocation;
 import com.andrii_gerashchenko.weatherandrii.DTO.WeatherLocation;
 import com.andrii_gerashchenko.weatherandrii.utils.Api;
 import com.google.gson.Gson;
-
-import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -26,13 +26,24 @@ public class Weather extends AppCompatActivity {
     @BindView(R.id.tvLocation)
     TextView tvLocation;
 
+    @BindView(R.id.rvWeatherList)
+    RecyclerView rvWeatherList;
+
     private ChosenLocation myLocation;
+//    private LinearLayoutManager mLayoutManager;
+//    private WeatherAdapter mWeatherAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather);
         ButterKnife.bind(this);
+
+//        mLayoutManager = new LinearLayoutManager(this);
+//        rvWeatherList.setLayoutManager(mLayoutManager);
+////---------------------
+//        mWeatherAdapter = WeatherAdapter();
+//        rvWeatherList.setAdapter(mWeatherAdapter);
 
         Bundle extras = getIntent().getExtras();
         String jsonMyObject;
@@ -63,7 +74,7 @@ public class Weather extends AppCompatActivity {
 
                 if (response.isSuccessful()) {
                     tvLocation.setText(data.getCity() + " " + data.getTempWithDegree());
-
+//                    tvLocation.setText(data.get);
                 }
             }
 
