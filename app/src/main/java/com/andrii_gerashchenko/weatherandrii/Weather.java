@@ -7,13 +7,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.andrii_gerashchenko.weatherandrii.DTO.ChosenLocation;
+import com.andrii_gerashchenko.weatherandrii.DTO.WeatherItem;
 import com.andrii_gerashchenko.weatherandrii.DTO.WeatherLocation;
+import com.andrii_gerashchenko.weatherandrii.adapters.WeatherItemAdapter;
 import com.andrii_gerashchenko.weatherandrii.utils.Api;
 import com.andrii_gerashchenko.weatherandrii.utils.DBHelper;
 import com.google.gson.Gson;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -29,15 +35,14 @@ public class Weather extends AppCompatActivity {
     @BindView(R.id.tvLocation)
     TextView tvLocation;
 
-    @BindView(R.id.rvWeatherList)
-    RecyclerView rvWeatherList;
+    @BindView(R.id.lvWeatherContainer)
+    ListView lvWeatherContainer;
 
     private ChosenLocation myLocation;
     private DBHelper mDBHelper;
-
-
-//    private LinearLayoutManager mLayoutManager;
-//    private WeatherAdapter mWeatherAdapter;
+    private WeatherItem mWeatherItem;
+    private List<WeatherItem> mList;
+    private WeatherItemAdapter mWeatherItemAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,16 +50,15 @@ public class Weather extends AppCompatActivity {
         setContentView(R.layout.activity_weather);
         ButterKnife.bind(this);
 
+        initDB();
+        mList = new ArrayList<>();
+    }
+
+    private void initDB() {
         mDBHelper = new DBHelper(this);
-//        mLayoutManager = new LinearLayoutManager(this);
-//        rvWeatherList.setLayoutManager(mLayoutManager);
-////---------------------
-//        mWeatherAdapter = WeatherAdapter();
-//        rvWeatherList.setAdapter(mWeatherAdapter);
 
         Bundle extras = getIntent().getExtras();
         String jsonMyObject;
-
 
         if (extras != null) {
             jsonMyObject = extras.getString("location");
@@ -64,13 +68,13 @@ public class Weather extends AppCompatActivity {
         }
     }
 
-    @OnClick (R.id.btnCheckWeather)
-    public void onCheckWeatherClick(){
-
+    @OnClick(R.id.btnCheckWeather)
+    public void onCheckWeatherClick() {
         getWeather();
+
     }
 
-    private void getWeather(){
+    private void getWeather() {
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(Api.BASE_URL)
@@ -78,7 +82,7 @@ public class Weather extends AppCompatActivity {
                 .build();
 
         Api api = retrofit.create(Api.class);
-        Call <WeatherLocation> call = api.getWeather(myLocation.getLatitude(), myLocation.getLongitude(),Api.units, Api.KEY);
+        Call<WeatherLocation> call = api.getWeather(myLocation.getLatitude(), myLocation.getLongitude(), Api.units, Api.KEY);
 
         call.enqueue(new Callback<WeatherLocation>() {
             @Override
@@ -98,7 +102,7 @@ public class Weather extends AppCompatActivity {
         });
     }
 
-    private void setWeatherToDB (Response<WeatherLocation> response){
+    private void setWeatherToDB(Response<WeatherLocation> response) {
         final SQLiteDatabase database = mDBHelper.getWritableDatabase();
         final ContentValues contentValues = new ContentValues();
 
@@ -108,26 +112,35 @@ public class Weather extends AppCompatActivity {
         contentValues.put(DBHelper.KEY_ICON, response.body().getIcon());
 
         database.insert(mDBHelper.TABLE_WEATHER, null, contentValues);
+        String selection = DBHelper.KEY_CITY + " = " + getLocation();
 
-        Cursor cursor = database.query(DBHelper.TABLE_WEATHER, null, null, null, null, null, DBHelper.KEY_CITY);
+        Cursor cursor = database.query(DBHelper.TABLE_WEATHER, null, null, null, null, null, DBHelper.KEY_DATE);
 
-        if (cursor.moveToFirst()){
+        if (cursor.moveToFirst()) {
             int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
             int cityIndex = cursor.getColumnIndex(DBHelper.KEY_CITY);
             int tempIndex = cursor.getColumnIndex(DBHelper.KEY_TEMP);
             int dateIndex = cursor.getColumnIndex(DBHelper.KEY_DATE);
             int iconIndex = cursor.getColumnIndex(DBHelper.KEY_ICON);
 
-            int id = cursor.getInt(idIndex);
-            String city = cursor.getString(cityIndex);
-            String temp = cursor.getString(tempIndex);
-            String date = cursor.getString(dateIndex);
-            String icon = cursor.getColumnName(iconIndex);
-
             do {
-                Log.d("MYLOG","id = " + cursor.getInt(idIndex)
-                        + ", city = " + cursor.getString(cityIndex)
-                        + ", temp " + cursor.getString(tempIndex));
+                int id = cursor.getInt(idIndex);
+                String city = cursor.getString(cityIndex);
+                String temp = cursor.getString(tempIndex);
+                String date = cursor.getString(dateIndex);
+                String icon = cursor.getColumnName(iconIndex);
+
+                mWeatherItem = new WeatherItem(city, temp, date, icon);
+
+                if (id > mList.size()){
+                    mList.add(mWeatherItem);
+                }
+
+                Log.d("MYLOG", "list size is " + mList.size() + " id = " + id + ", city = " + mWeatherItem.getCity() + ", " +
+                        "temp " + mWeatherItem.getTemp() + " date " + mWeatherItem.getDate());
+
+                mWeatherItemAdapter = new WeatherItemAdapter(this, mList);
+                lvWeatherContainer.setAdapter(mWeatherItemAdapter);
 
             } while (cursor.moveToNext());
         } else
@@ -137,15 +150,15 @@ public class Weather extends AppCompatActivity {
         mDBHelper.close();
     }
 
-    private String getLocation (){
+    private String getLocation() {
         String location = "";
         if (!(myLocation.getCountryName().equals("null"))) {
             location += myLocation.getCountryName();
         }
-        if (!(myLocation.getAdminArea().equals("null"))){
+        if (!(myLocation.getAdminArea().equals("null"))) {
             location += " " + myLocation.getAdminArea();
         }
-        if (!myLocation.getLocality().equals("null")){
+        if (!myLocation.getLocality().equals("null")) {
             location += " " + myLocation.getLocality();
         }
 
