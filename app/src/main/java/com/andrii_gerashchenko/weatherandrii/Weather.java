@@ -1,5 +1,8 @@
 package com.andrii_gerashchenko.weatherandrii;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -10,6 +13,7 @@ import android.widget.TextView;
 import com.andrii_gerashchenko.weatherandrii.DTO.ChosenLocation;
 import com.andrii_gerashchenko.weatherandrii.DTO.WeatherLocation;
 import com.andrii_gerashchenko.weatherandrii.utils.Api;
+import com.andrii_gerashchenko.weatherandrii.utils.DBHelper;
 import com.google.gson.Gson;
 
 import butterknife.BindView;
@@ -30,6 +34,9 @@ public class Weather extends AppCompatActivity {
     RecyclerView rvWeatherList;
 
     private ChosenLocation myLocation;
+    private DBHelper mDBHelper;
+
+
 //    private LinearLayoutManager mLayoutManager;
 //    private WeatherAdapter mWeatherAdapter;
 
@@ -39,6 +46,7 @@ public class Weather extends AppCompatActivity {
         setContentView(R.layout.activity_weather);
         ButterKnife.bind(this);
 
+        mDBHelper = new DBHelper(this);
 //        mLayoutManager = new LinearLayoutManager(this);
 //        rvWeatherList.setLayoutManager(mLayoutManager);
 ////---------------------
@@ -47,6 +55,7 @@ public class Weather extends AppCompatActivity {
 
         Bundle extras = getIntent().getExtras();
         String jsonMyObject;
+
 
         if (extras != null) {
             jsonMyObject = extras.getString("location");
@@ -58,6 +67,10 @@ public class Weather extends AppCompatActivity {
 
     @OnClick (R.id.btnCheckWeather)
     public void onCheckWeatherClick(){
+
+        final SQLiteDatabase database = mDBHelper.getWritableDatabase();
+        final ContentValues contentValues = new ContentValues();
+
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(Api.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -73,9 +86,42 @@ public class Weather extends AppCompatActivity {
                 WeatherLocation data = response.body();
 
                 if (response.isSuccessful()) {
-                    tvLocation.setText(data.getCity() + " " + data.getTempWithDegree());
-//                    tvLocation.setText(data.get);
+                    tvLocation.setText(response.body().getCity() + " sp " + data.getWindSpeed());
+
+                    contentValues.put(DBHelper.KEY_CITY, response.body().getCity());
+                    contentValues.put(DBHelper.KEY_TEMP, response.body().getTemp());
+                    contentValues.put(DBHelper.KEY_DATE, response.body().getDate().toString());
+                    contentValues.put(DBHelper.KEY_ICON, response.body().getIcon());
+
+                    database.insert(mDBHelper.TABLE_WEATHER, null, contentValues);
+
+                    Cursor cursor = database.query(DBHelper.TABLE_WEATHER, null, null, null, null, null, null);
+
+                    if (cursor.moveToFirst()){
+                        int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
+                        int cityIndex = cursor.getColumnIndex(DBHelper.KEY_CITY);
+                        int tempIndex = cursor.getColumnIndex(DBHelper.KEY_TEMP);
+                        int dateIndex = cursor.getColumnIndex(DBHelper.KEY_DATE);
+                        int iconIndex = cursor.getColumnIndex(DBHelper.KEY_ICON);
+
+                        int id = cursor.getInt(idIndex);
+                        String city = cursor.getString(cityIndex);
+                        String temp = cursor.getString(tempIndex);
+                        String date = cursor.getString(dateIndex);
+                        String icon = cursor.getColumnName(iconIndex);
+
+                        do {
+                            Log.d("MYLOG","id = " + cursor.getInt(idIndex)
+                            + ", city = " + cursor.getString(cityIndex)
+                                    + ", temp " + cursor.getString(tempIndex));
+
+                        } while (cursor.moveToNext());
+                    } else
+                        Log.d("MYLOG", "0 rows");
+
+                    cursor.close();
                 }
+                mDBHelper.close();
             }
 
             @Override
