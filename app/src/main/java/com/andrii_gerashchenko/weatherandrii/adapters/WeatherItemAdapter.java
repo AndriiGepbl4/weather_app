@@ -10,7 +10,7 @@ import android.widget.TextView;
 
 import com.andrii_gerashchenko.weatherandrii.DTO.WeatherItem;
 import com.andrii_gerashchenko.weatherandrii.R;
-import com.andrii_gerashchenko.weatherandrii.Weather;
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class WeatherItemAdapter extends BaseAdapter {
     public WeatherItemAdapter(Context context, List<WeatherItem> weatherItems) {
         mContext = context;
         mWeatherItems = weatherItems;
-        mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
     @Override
@@ -50,14 +50,20 @@ public class WeatherItemAdapter extends BaseAdapter {
 
         WeatherItem weatherItem = getWeatherItem(position);
 
-//        (ImageView) view.findViewById(R.id.ivWeather).
         ((TextView) view.findViewById(R.id.tvLocation)).setText(weatherItem.getCity());
         ((TextView) view.findViewById(R.id.tvTemp)).setText(weatherItem.getTemp());
         ((TextView) view.findViewById(R.id.tvDate)).setText(weatherItem.getDate());
+
+        Picasso.get()
+                .load(weatherItem.getIcon())
+                .placeholder(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher_round)
+                .into((ImageView) view.findViewById(R.id.ivWeather));
+
         return view;
     }
 
-    WeatherItem getWeatherItem(int position){
-        return (WeatherItem)getItem(position);
+    WeatherItem getWeatherItem(int position) {
+        return (WeatherItem) getItem(position);
     }
 }

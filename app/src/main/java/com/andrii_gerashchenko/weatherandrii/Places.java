@@ -39,6 +39,7 @@ public class Places extends AppCompatActivity {
     protected void onResume() {
         Log.d(MYTAG, "onResume");
         super.onResume();
+
         if (locations != null) {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.item_places, locationsString);
             lvLocations.setAdapter(adapter);

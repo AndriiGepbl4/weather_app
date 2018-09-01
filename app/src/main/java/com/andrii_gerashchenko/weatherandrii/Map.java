@@ -77,7 +77,6 @@ public class Map extends AppCompatActivity
     private LatLng[] mLikelyPlaceLatLngs;
 
     private ChosenLocation myLocation;
-    private String place = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,7 +124,7 @@ public class Map extends AppCompatActivity
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
 
-//        setMarker();
+        // SetMarker();
         mMap.getUiSettings().setCompassEnabled(true);
         mMap.setOnMapClickListener(this);
         ButterKnife.bind(this);
@@ -142,13 +141,6 @@ public class Map extends AppCompatActivity
             super.onSaveInstanceState(outState);
         }
     }
-
-    private void setMarker() {
-        Log.d("MYTAG", "mLastKnownLocation.getLatitude() is " + mLastKnownLocation.getLatitude());
-//        mMap.addMarker(new MarkerOptions().position(new LatLng(mLastKnownLocation.getLatitude(),
-//                mLastKnownLocation.getLongitude())).title("Location Marker"));
-    }
-
     /**
      * Gets the current location of the device, and positions the map's camera.
      */
@@ -170,7 +162,7 @@ public class Map extends AppCompatActivity
                             moveCamera(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()),
                                     DEFAULT_ZOOM);
 
-                            addMarker(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()),"My location");
+                            addMarker(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()), "My location");
                             addPlaceToList(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()));
 
                         } else {
@@ -191,7 +183,7 @@ public class Map extends AppCompatActivity
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
     }
 
-    private void addMarker(LatLng latLng, String title){
+    private void addMarker(LatLng latLng, String title) {
         MarkerOptions options = new MarkerOptions()
                 .position(latLng)
                 .title(title);
@@ -199,10 +191,8 @@ public class Map extends AppCompatActivity
         mMap.addMarker(options);
     }
 
-
     @Override
     public void onMapClick(LatLng latLng) {
-//        moveCamera(latLng, DEFAULT_ZOOM);
         mMap.clear();
         addMarker(latLng, "Chosen location");
         addPlaceToList(latLng);
@@ -212,7 +202,7 @@ public class Map extends AppCompatActivity
         toast.show();
     }
 
-    private void addPlaceToList(LatLng latLng){
+    private void addPlaceToList(LatLng latLng) {
         Geocoder gcd = new Geocoder(this, Locale.getDefault());
         List<Address> addresses = null;
 
@@ -232,10 +222,10 @@ public class Map extends AppCompatActivity
 
     @OnClick(R.id.btnOk)
     public void onOkClick() {
-            Intent intent = new Intent();
-            intent.putExtra("places", new Gson().toJson(myLocation));
-            setResult(RESULT_OK, intent);
-            finish();
+        Intent intent = new Intent();
+        intent.putExtra("places", new Gson().toJson(myLocation));
+        setResult(RESULT_OK, intent);
+        finish();
     }
 
     @OnClick(R.id.btnCancel)

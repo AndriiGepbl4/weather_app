@@ -8,17 +8,15 @@ import retrofit2.http.Query;
 
 public interface Api {
 
-    public static String KEY = "7f86084167996c634b1d3e0df01a33e7";
+    String KEY = "7f86084167996c634b1d3e0df01a33e7";
     String BASE_URL = "http://api.openweathermap.org";
     String units = "metric";
 
     @GET("/data/2.5/weather")
-    Call <WeatherLocation> getWeather(
-      @Query("lat") double lat,
-      @Query("lon") double lon,
-      @Query("units") String units,
-      @Query("appid") String appid
+    Call<WeatherLocation> getWeather(
+            @Query("lat") double lat,
+            @Query("lon") double lon,
+            @Query("units") String units,
+            @Query("appid") String appid
     );
-
-//    api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}
 }

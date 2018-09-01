@@ -1,6 +1,7 @@
 package com.andrii_gerashchenko.weatherandrii.DTO;
 
 public class ChosenLocation {
+
     private String countryName;
     private String adminArea;
     private String locality;

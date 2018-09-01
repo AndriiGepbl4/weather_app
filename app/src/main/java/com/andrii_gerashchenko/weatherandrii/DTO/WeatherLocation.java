@@ -28,7 +28,7 @@ public class WeatherLocation {
         Double pressure;
     }
 
-    public class Wind{
+    public class Wind {
         Double speed;
     }
 
@@ -41,38 +41,58 @@ public class WeatherLocation {
         this.desctiption = desctiption;
     }
 
-    public Calendar getDate() {
+    public String getDate() {
         Calendar date = Calendar.getInstance();
         date.setTimeInMillis(timestamp * 1000);
-        return date;
+
+        int day = date.get(Calendar.DAY_OF_MONTH);
+        int month = date.get(Calendar.MONTH);
+        int year = date.get(Calendar.YEAR);
+        int hour = date.get(Calendar.HOUR);
+        int minute = date.get(Calendar.MINUTE);
+
+        String strDate = day + "/" + month + "/" + year
+                + " " + hour + ":" + minute;
+        return strDate;
     }
 
-    public String getTemp() { return String.valueOf(temp.temp); }
+    public String getTemp() {
+        return String.valueOf(temp.temp);
+    }
 
-    public String getPerssure() {return  String.valueOf(temp.pressure);}
+    public String getPerssure() {
+        return String.valueOf(temp.pressure);
+    }
 
-    public String getTempMin() { return String.valueOf(temp.temp_min); }
+    public String getTempMin() {
+        return String.valueOf(temp.temp_min);
+    }
 
-    public String getWindSpeed() { return String.valueOf(wind.speed);}
+    public String getWindSpeed() {
+        return String.valueOf(wind.speed);
+    }
 
-    public String getTempMax() { return String.valueOf(temp.temp_max); }
+    public String getTempMax() {
+        return String.valueOf(temp.temp_max);
+    }
 
-    public String getTempInteger() { return String.valueOf(temp.temp.intValue()); }
+    public String getTempInteger() {
+        return String.valueOf(temp.temp.intValue());
+    }
 
-    public String getTempWithDegree() { return String.valueOf(temp.temp.intValue()) + "\u00B0"; }
+    public String getTempWithDegree() {
+        return String.valueOf(temp.temp.intValue()) + "\u00B0";
+    }
 
-    public String getCity() { return city; }
+    public String getCity() {
+        return city;
+    }
 
-    public String getIcon() { return desctiption.get(0).icon; }
+    public String getIcon() {
+        return desctiption.get(0).icon;
+    }
 
     public String getIconUrl() {
         return "http://openweathermap.org/img/w/" + desctiption.get(0).icon + ".png";
     }
-
-// "weather":[{
-// "id":800,"main":"Clear","description":"clear sky","icon":"01n"}],"base":"stations",
-// "main":{"temp":285.514,"pressure":1013.75,"humidity":100,"temp_min":285.514,"temp_max":285.514,"sea_level":1023.22,"grnd_level":1013.75},
-// "wind":{"speed":5.52,"deg":311},"clouds":{"all":0},"dt":1485792967,
-// "sys":{"message":0.0025,"country":"JP","sunrise":1485726240,"sunset":1485763863},
-// "id":1907296,"name":"Tawarano","cod":200}
 }

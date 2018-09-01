@@ -5,7 +5,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -71,11 +70,9 @@ public class Weather extends AppCompatActivity {
     @OnClick(R.id.btnCheckWeather)
     public void onCheckWeatherClick() {
         getWeather();
-
     }
 
     private void getWeather() {
-
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(Api.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -91,7 +88,7 @@ public class Weather extends AppCompatActivity {
                 WeatherLocation data = response.body();
 
                 if (response.isSuccessful()) {
-                    tvLocation.setText(response.body().getCity() + " sp " + data.getWindSpeed());
+                    tvLocation.setText(getLocation());
                     setWeatherToDB(response);
                 }
             }
@@ -109,12 +106,13 @@ public class Weather extends AppCompatActivity {
         contentValues.put(DBHelper.KEY_CITY, getLocation());
         contentValues.put(DBHelper.KEY_TEMP, response.body().getTemp());
         contentValues.put(DBHelper.KEY_DATE, response.body().getDate().toString());
-        contentValues.put(DBHelper.KEY_ICON, response.body().getIcon());
+        contentValues.put(DBHelper.KEY_ICON, response.body().getIconUrl());
 
         database.insert(mDBHelper.TABLE_WEATHER, null, contentValues);
-        String selection = DBHelper.KEY_CITY + " = " + getLocation();
 
-        Cursor cursor = database.query(DBHelper.TABLE_WEATHER, null, null, null, null, null, DBHelper.KEY_DATE);
+        Cursor cursor = database.rawQuery("SELECT * FROM " + DBHelper.TABLE_WEATHER
+                + " WHERE " + DBHelper.KEY_CITY + " LIKE " + "'" + getLocation() + "'"
+                + " ORDER BY " + DBHelper.KEY_TEMP, null);
 
         if (cursor.moveToFirst()) {
             int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
@@ -123,30 +121,24 @@ public class Weather extends AppCompatActivity {
             int dateIndex = cursor.getColumnIndex(DBHelper.KEY_DATE);
             int iconIndex = cursor.getColumnIndex(DBHelper.KEY_ICON);
 
+            mList.clear();
             do {
                 int id = cursor.getInt(idIndex);
                 String city = cursor.getString(cityIndex);
                 String temp = cursor.getString(tempIndex);
                 String date = cursor.getString(dateIndex);
-                String icon = cursor.getColumnName(iconIndex);
+                String icon = cursor.getString(iconIndex);
 
                 mWeatherItem = new WeatherItem(city, temp, date, icon);
-
-                if (id > mList.size()){
-                    mList.add(mWeatherItem);
-                }
-
-                Log.d("MYLOG", "list size is " + mList.size() + " id = " + id + ", city = " + mWeatherItem.getCity() + ", " +
-                        "temp " + mWeatherItem.getTemp() + " date " + mWeatherItem.getDate());
+                mList.add(mWeatherItem);
 
                 mWeatherItemAdapter = new WeatherItemAdapter(this, mList);
                 lvWeatherContainer.setAdapter(mWeatherItemAdapter);
 
             } while (cursor.moveToNext());
         } else
-            Log.d("MYLOG", "0 rows");
 
-        cursor.close();
+            cursor.close();
         mDBHelper.close();
     }
 
@@ -161,7 +153,6 @@ public class Weather extends AppCompatActivity {
         if (!myLocation.getLocality().equals("null")) {
             location += " " + myLocation.getLocality();
         }
-
         return location;
     }
 }
