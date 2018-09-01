@@ -5,7 +5,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.TextView;
@@ -68,8 +67,10 @@ public class Weather extends AppCompatActivity {
     @OnClick (R.id.btnCheckWeather)
     public void onCheckWeatherClick(){
 
-        final SQLiteDatabase database = mDBHelper.getWritableDatabase();
-        final ContentValues contentValues = new ContentValues();
+        getWeather();
+    }
+
+    private void getWeather(){
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(Api.BASE_URL)
@@ -87,47 +88,67 @@ public class Weather extends AppCompatActivity {
 
                 if (response.isSuccessful()) {
                     tvLocation.setText(response.body().getCity() + " sp " + data.getWindSpeed());
-
-                    contentValues.put(DBHelper.KEY_CITY, response.body().getCity());
-                    contentValues.put(DBHelper.KEY_TEMP, response.body().getTemp());
-                    contentValues.put(DBHelper.KEY_DATE, response.body().getDate().toString());
-                    contentValues.put(DBHelper.KEY_ICON, response.body().getIcon());
-
-                    database.insert(mDBHelper.TABLE_WEATHER, null, contentValues);
-
-                    Cursor cursor = database.query(DBHelper.TABLE_WEATHER, null, null, null, null, null, null);
-
-                    if (cursor.moveToFirst()){
-                        int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
-                        int cityIndex = cursor.getColumnIndex(DBHelper.KEY_CITY);
-                        int tempIndex = cursor.getColumnIndex(DBHelper.KEY_TEMP);
-                        int dateIndex = cursor.getColumnIndex(DBHelper.KEY_DATE);
-                        int iconIndex = cursor.getColumnIndex(DBHelper.KEY_ICON);
-
-                        int id = cursor.getInt(idIndex);
-                        String city = cursor.getString(cityIndex);
-                        String temp = cursor.getString(tempIndex);
-                        String date = cursor.getString(dateIndex);
-                        String icon = cursor.getColumnName(iconIndex);
-
-                        do {
-                            Log.d("MYLOG","id = " + cursor.getInt(idIndex)
-                            + ", city = " + cursor.getString(cityIndex)
-                                    + ", temp " + cursor.getString(tempIndex));
-
-                        } while (cursor.moveToNext());
-                    } else
-                        Log.d("MYLOG", "0 rows");
-
-                    cursor.close();
+                    setWeatherToDB(response);
                 }
-                mDBHelper.close();
             }
 
             @Override
             public void onFailure(Call<WeatherLocation> call, Throwable t) {
-
             }
         });
+    }
+
+    private void setWeatherToDB (Response<WeatherLocation> response){
+        final SQLiteDatabase database = mDBHelper.getWritableDatabase();
+        final ContentValues contentValues = new ContentValues();
+
+        contentValues.put(DBHelper.KEY_CITY, getLocation());
+        contentValues.put(DBHelper.KEY_TEMP, response.body().getTemp());
+        contentValues.put(DBHelper.KEY_DATE, response.body().getDate().toString());
+        contentValues.put(DBHelper.KEY_ICON, response.body().getIcon());
+
+        database.insert(mDBHelper.TABLE_WEATHER, null, contentValues);
+
+        Cursor cursor = database.query(DBHelper.TABLE_WEATHER, null, null, null, null, null, DBHelper.KEY_CITY);
+
+        if (cursor.moveToFirst()){
+            int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
+            int cityIndex = cursor.getColumnIndex(DBHelper.KEY_CITY);
+            int tempIndex = cursor.getColumnIndex(DBHelper.KEY_TEMP);
+            int dateIndex = cursor.getColumnIndex(DBHelper.KEY_DATE);
+            int iconIndex = cursor.getColumnIndex(DBHelper.KEY_ICON);
+
+            int id = cursor.getInt(idIndex);
+            String city = cursor.getString(cityIndex);
+            String temp = cursor.getString(tempIndex);
+            String date = cursor.getString(dateIndex);
+            String icon = cursor.getColumnName(iconIndex);
+
+            do {
+                Log.d("MYLOG","id = " + cursor.getInt(idIndex)
+                        + ", city = " + cursor.getString(cityIndex)
+                        + ", temp " + cursor.getString(tempIndex));
+
+            } while (cursor.moveToNext());
+        } else
+            Log.d("MYLOG", "0 rows");
+
+        cursor.close();
+        mDBHelper.close();
+    }
+
+    private String getLocation (){
+        String location = "";
+        if (!(myLocation.getCountryName().equals("null"))) {
+            location += myLocation.getCountryName();
+        }
+        if (!(myLocation.getAdminArea().equals("null"))){
+            location += " " + myLocation.getAdminArea();
+        }
+        if (!myLocation.getLocality().equals("null")){
+            location += " " + myLocation.getLocality();
+        }
+
+        return location;
     }
 }
