@@ -1,6 +1,12 @@
 package com.andrii_gerashchenko.weatherandrii;
 
+import android.Manifest;
+import android.app.Dialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,8 +14,11 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.andrii_gerashchenko.weatherandrii.DTO.ChosenLocation;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -23,21 +32,39 @@ public class Places extends AppCompatActivity {
     @BindView(R.id.lvLocations)
     ListView lvLocations;
 
+    private static final int ERROR_DIALOG_REQUEST = 9001;
     private ArrayList<ChosenLocation> locations = new ArrayList<>();
     private ArrayList<String> locationsString = new ArrayList<>();
     private ChosenLocation myLocation;
-    private final static String MYTAG = "MYTAG";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_places);
-        ButterKnife.bind(this);
+
+        if (isServiceOk()) {
+            ButterKnife.bind(this);
+        }
+    }
+
+    private boolean isServiceOk() {
+        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(Places.this);
+
+        if (available == ConnectionResult.SUCCESS) {
+            //everything is fine and the user can make map requests
+            return true;
+        } else if (GoogleApiAvailability.getInstance().isUserResolvableError(available)) {
+            //an error occured but we can resolve it
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(Places.this, available, ERROR_DIALOG_REQUEST);
+            dialog.show();
+        } else {
+            Toast.makeText(this, "You can't make map requests", Toast.LENGTH_SHORT).show();
+        }
+        return false;
     }
 
     @Override
     protected void onResume() {
-        Log.d(MYTAG, "onResume");
         super.onResume();
 
         if (locations != null) {
@@ -58,8 +85,6 @@ public class Places extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.d(MYTAG, "onActivityResult");
-
         String jsonMyObject;
         Bundle extras = data.getExtras();
         if (extras != null) {
@@ -79,18 +104,4 @@ public class Places extends AppCompatActivity {
         Intent intent = new Intent(this, Map.class);
         startActivityForResult(intent, 1);
     }
-
-//    @Override
-//    public void onSaveInstanceState(Bundle outState) {
-//        Log.d(MYTAG, "onSaveInstanceState");
-//        outState.putStringArrayList("loc", locations);
-//        super.onSaveInstanceState(outState);
-//    }
-//
-//    @Override
-//    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-//        Log.d(MYTAG, "onRestoreInstanceState");
-//        super.onRestoreInstanceState(savedInstanceState);
-//        locations = savedInstanceState.getStringArrayList("loc");
-//    }
 }
