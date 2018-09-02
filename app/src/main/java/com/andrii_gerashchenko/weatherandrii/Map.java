@@ -1,5 +1,6 @@
 package com.andrii_gerashchenko.weatherandrii;
 
+import android.Manifest;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
@@ -13,7 +14,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.andrii_gerashchenko.weatherandrii.DTO.ChosenLocation;
@@ -46,6 +46,11 @@ public class Map extends AppCompatActivity
         implements OnMapReadyCallback, GoogleMap.OnMapClickListener {
 
     private static final String TAG = Map.class.getSimpleName();
+    private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
+    private final LatLng mDefaultLocation = new LatLng(-33.8523341, 151.2106085);
+
     private GoogleMap mMap;
     private CameraPosition mCameraPosition;
 
@@ -56,9 +61,7 @@ public class Map extends AppCompatActivity
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient mFusedLocationProviderClient;
 
-    private final LatLng mDefaultLocation = new LatLng(-33.8523341, 151.2106085);
-    private static final int DEFAULT_ZOOM = 15;
-    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private static final int DEFAULT_ZOOM = 8;
     private boolean mLocationPermissionGranted;
 
     // The geographical location where the device is currently located. That is, the last-known
@@ -166,16 +169,12 @@ public class Map extends AppCompatActivity
                             addPlaceToList(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()));
 
                         } else {
-                            Log.d(TAG, "Current location is null. Using defaults.");
-                            Log.e(TAG, "Exception: %s", task.getException());
-
                             mMap.getUiSettings().setMyLocationButtonEnabled(false);
                         }
                     }
                 });
             }
         } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
         }
     }
 
@@ -258,7 +257,6 @@ public class Map extends AppCompatActivity
                 getLocationPermission();
             }
         } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
         }
     }
 
@@ -320,21 +318,11 @@ public class Map extends AppCompatActivity
                                 openPlacesDialog();
 
                             } else {
-                                Log.e(TAG, "Exception: %s", task.getException());
                             }
                         }
                     });
         } else {
             // The user has not granted permission.
-            Log.i(TAG, "The user did not grant location permission.");
-
-            // Add a default marker, because the user hasn't selected a place.
-//            mMap.addMarker(new MarkerOptions()
-//                    .title(getString(R.string.default_info_title))
-//                    .position(mDefaultLocation)
-//                    .snippet(getString(R.string.default_info_snippet)));
-
-            // Prompt the user for permission.
             getLocationPermission();
         }
     }
@@ -377,20 +365,19 @@ public class Map extends AppCompatActivity
     /**
      * Prompts the user for permission to use the device location.
      */
-    private void getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
+    private void getLocationPermission(){
+        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION};
+
+        if(ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            if(ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                    COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+                mLocationPermissionGranted = true;
+            }
         } else {
             ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+                    permissions, LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
 
@@ -399,17 +386,21 @@ public class Map extends AppCompatActivity
      */
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
+                                           @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         mLocationPermissionGranted = false;
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+        switch (requestCode){
+            case LOCATION_PERMISSION_REQUEST_CODE:
+                if(grantResults.length > 0){
+                    for (int i = 0; i < grantResults.length; i++){
+                        if(grantResults [i] != PackageManager.PERMISSION_GRANTED){
+                            mLocationPermissionGranted = false;
+                            return;
+                        }
+                    }
                     mLocationPermissionGranted = true;
                 }
-            }
         }
         updateLocationUI();
     }
