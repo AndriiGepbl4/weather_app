@@ -85,13 +85,14 @@ public class Map extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getLocationPermission();
+
         // Retrieve location and camera position from saved instance state.
         if (savedInstanceState != null) {
             mLastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
             mCameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
 
-        // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_map);
 
         // Construct a GeoDataClient.
@@ -117,9 +118,6 @@ public class Map extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
-
-        // Prompt the user for permission.
-        getLocationPermission();
 
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI();
